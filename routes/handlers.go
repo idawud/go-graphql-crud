@@ -1,35 +1,36 @@
-package main
+package routes
 
 import (
 	"github.com/graphql-go/graphql"
+	"github.com/idawud/go-graphql-crud/gql"
 	"io/ioutil"
 	"log"
 	"net/http"
 )
 
 type Route struct {
-	logger *log.Logger
-	schema graphql.Schema
+	Logger *log.Logger
+	Schema graphql.Schema
 }
 
 func (route *Route) IndexRoute( rw http.ResponseWriter, r *http.Request)  {
-	route.logger.Println("Index Get")
+	route.Logger.Println("Index Get")
 	_, _ = rw.Write([]byte("graphQl running on http://localhost:8080/graphql"))
 }
 
 func (route *Route) GraphqlRoute( rw http.ResponseWriter, r *http.Request)  {
-	route.logger.Println("Graphql post")
+	route.Logger.Println("Graphql post")
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		route.logger.Printf("could not read query %v", err)
+		route.Logger.Printf("could not read query %v", err)
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	// execute query
-	json, err := executeQuery(route.schema, string(body))
+	json, err := gql.ExecuteQuery(route.Schema, string(body))
 	if err != nil {
-		route.logger.Printf("could not process query %v", err)
+		route.Logger.Printf("could not process query %v", err)
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}

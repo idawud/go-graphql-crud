@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/idawud/go-graphql-crud/gql"
+	handlers "github.com/idawud/go-graphql-crud/routes"
 	"log"
 	"net/http"
 	"os"
@@ -13,15 +15,15 @@ import (
 
 func main() {
 	logger := log.New(os.Stdout, "graphql-api ", log.LstdFlags)
-	initDatabase()
-	defer DBConn.Close()
+	gql.InitDatabase()
+	defer gql.DBConn.Close()
 	// get schema
-	schema, err := getSchema()
+	schema, err := gql.GetSchema()
 	if err != nil {
 		panic("No Schema")
 	}
 	// get routes
-	routes := &Route{logger, schema}
+	routes := handlers.Route{Logger: logger, Schema: schema}
 
 	// setup mux
 	sm := mux.NewRouter()
@@ -29,7 +31,7 @@ func main() {
 	getRouter.HandleFunc("/", routes.IndexRoute)
 
 	postRouter := sm.Methods(http.MethodPost).Subrouter()
-	postRouter.Use(JSONContentTypeMiddleware)
+	postRouter.Use(handlers.JSONContentTypeMiddleware)
 	postRouter.HandleFunc(`/graphql`, routes.GraphqlRoute)
 
 		server := &http.Server{

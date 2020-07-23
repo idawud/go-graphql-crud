@@ -1,4 +1,4 @@
-package main
+package gql
 
 import (
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 )
 
 
-func initDatabase() {
+func InitDatabase() {
 	var err error
 	DBConn, err = gorm.Open("sqlite3", "movies.db")
 	if err != nil {
@@ -22,7 +22,7 @@ func initDatabase() {
 	log.Println("Migration Completed")
 }
 
-func getSchema() (graphql.Schema, error){
+func GetSchema() (graphql.Schema, error){
 	// Setup schema
 	schemaConfig := graphql.SchemaConfig{Query: rootQuery, Mutation: mutationType}
 
@@ -34,7 +34,7 @@ func getSchema() (graphql.Schema, error){
 }
 
 
-func executeQuery(schema graphql.Schema, query string) ([]byte, error){
+func ExecuteQuery(schema graphql.Schema, query string) ([]byte, error){
 	params := graphql.Params{Schema: schema, RequestString: query}
 	response := graphql.Do(params)
 

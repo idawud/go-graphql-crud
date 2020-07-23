@@ -1,4 +1,4 @@
-package main
+package gql
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+// Object Types
 var MovieType = graphql.NewObject(
 	graphql.ObjectConfig{
 		Name: "movie",
@@ -23,7 +24,7 @@ var MovieType = graphql.NewObject(
 	},
 )
 
-
+// InputObjects Types
 var MovieInputType = graphql.NewInputObject(graphql.InputObjectConfig{
 	Name: "MovieInputType",
 	Fields: graphql.InputObjectConfigFieldMap{
@@ -37,7 +38,7 @@ var mutationType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "Mutation",
 	Fields: graphql.Fields{
 		"createMovie": &graphql.Field{
-			Type: MovieType,
+			Type:        MovieType,
 			Description: "Create a new Movie",
 			Args: graphql.FieldConfigArgument{
 				"movie": &graphql.ArgumentConfig{
@@ -84,7 +85,7 @@ var mutationType = graphql.NewObject(graphql.ObjectConfig{
 			},
 		},
 		"updateMovie": &graphql.Field{
-			Type: MovieType,
+			Type:        MovieType,
 			Description: "update a Movie",
 			Args: graphql.FieldConfigArgument{
 				"id": &graphql.ArgumentConfig{
@@ -137,7 +138,7 @@ var rootQuery = graphql.NewObject(graphql.ObjectConfig{
 			},
 		},
 		"movie": &graphql.Field{
-			Type:   MovieType,
+			Type:        MovieType,
 			Description: "Get all Movie by ID",
 			Args: graphql.FieldConfigArgument{
 				"id": &graphql.ArgumentConfig{
