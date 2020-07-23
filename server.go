@@ -1,71 +1,63 @@
 package main
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
-	"github.com/graphql-go/graphql"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	"github.com/gorilla/mux"
 	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"time"
 )
 
-
-func initDatabase() {
-	var err error
-	DBConn, err = gorm.Open("sqlite3", "movies.db")
-	if err != nil {
-		panic("Failed To Open Connection: " + err.Error())
-	}
-	log.Println("DB connection Successful")
-
-	DBConn.AutoMigrate(&Movie{})
-	log.Println("Migration Completed")
-}
-
-func main(){
+func main() {
+	logger := log.New(os.Stdout, "graphql-api ", log.LstdFlags)
 	initDatabase()
 	defer DBConn.Close()
-	// Setup schema
-	schemaConfig := graphql.SchemaConfig{Query: rootQuery, Mutation: mutationType}
-
-	schema, err := graphql.NewSchema(schemaConfig)
+	// get schema
+	schema, err := getSchema()
 	if err != nil {
-		log.Fatalf("Failed to create graphql schema, error %v", err)
+		panic("No Schema")
+	}
+	// get routes
+	routes := &Route{logger, schema}
+
+	// setup mux
+	sm := mux.NewRouter()
+	getRouter := sm.Methods(http.MethodGet).Subrouter()
+	getRouter.HandleFunc("/", routes.IndexRoute)
+
+	postRouter := sm.Methods(http.MethodPost).Subrouter()
+	postRouter.Use(JSONContentTypeMiddleware)
+	postRouter.HandleFunc(`/graphql`, routes.GraphqlRoute)
+
+		server := &http.Server{
+		Addr: ":8080",
+		Handler: sm,
+		IdleTimeout:120*time.Second,
+		ReadTimeout: 1*time.Second,
+		WriteTimeout:1*time.Second,
 	}
 
-	// create Movie
+	fmt.Println("Server running on http://localhost:8080/" )
+	log.Println(" Server started at ", time.Now().String())
+	go func() {
+		err := server.ListenAndServe()
+		if err != nil {
+			logger.Fatal(err)
+		}
+	}()
 
-	mutate := `
-	 mutation {
-        updateMovie(id: 2, movie: { title: "updated movie again"}) {
-            title,
-			id
-        }
-    }
-	`
-	executeQuery(schema, mutate)
-	query := `
-	 query {
-        movie(id: 2){
-            title,
-			minutes,
-			id
-        }
-    }
-	`
-	executeQuery(schema, query)
+	// Graceful shutdown
+	sigChan := make(chan os.Signal)
+	signal.Notify(sigChan, os.Interrupt)
+	signal.Notify(sigChan, os.Kill)
+
+	sig := <-sigChan
+	logger.Println("Graceful shutdown", sig)
+
+	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
+	_ = server.Shutdown(ctx)
+	
 }
-
-
-func executeQuery(schema graphql.Schema, query string) {
-	params := graphql.Params{Schema: schema, RequestString: query}
-	response := graphql.Do(params)
-
-	if len(response.Errors) > 0 {
-		log.Fatalf("Unable to process graphql query, err %+v", response.Errors)
-	}
-
-	data, _ := json.Marshal(response)
-	fmt.Printf("%s \n", data)
-}
-
