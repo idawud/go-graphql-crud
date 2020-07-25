@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/idawud/go-graphql-crud/gql"
 	routeHandlers "github.com/idawud/go-graphql-crud/routes"
@@ -32,12 +33,15 @@ func main() {
 
 	postRouter := sm.Methods(http.MethodPost).Subrouter()
 	postRouter.Use(routeHandlers.JSONContentTypeMiddleware) // return json objects
-	sm.Use(mux.CORSMethodMiddleware(postRouter))    // allow cors on all origins
 	postRouter.HandleFunc(`/graphql`, routes.GraphqlRoute)
 
-		server := &http.Server{
+	// Where ORIGIN_ALLOWED
+	originsOk := handlers.AllowedOrigins([]string{"*"})
+	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST"})
+
+	server := &http.Server{
 		Addr: ":8080",
-		Handler: sm,
+		Handler: handlers.CORS(originsOk, methodsOk)(sm),
 		IdleTimeout:120*time.Second,
 		ReadTimeout: 1*time.Second,
 		WriteTimeout:1*time.Second,
