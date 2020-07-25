@@ -1,0 +1,25 @@
+{
+  "AWSEBDockerrunVersion": 2,
+  "volumes": [
+    {
+      "name": "go-gql-app",
+      "host": {
+        "sourcePath": "/var/app/current/go-gql-app"
+      }
+    }
+  ],
+  "containerDefinitions": [
+      {
+        "name": "gql-server",
+        "image": "idawud/gql-server",
+        "essential": true,
+        "memory": 256,
+        "portMappings": [
+          {
+            "hostPort": 80,
+            "containerPort": 8080
+          }
+        ]
+      }
+    ]
+  }
